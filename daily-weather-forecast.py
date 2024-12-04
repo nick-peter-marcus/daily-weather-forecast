@@ -37,17 +37,21 @@ r = requests.get(url, params)
 raw_json_data = r.json()
 hourly_data = raw_json_data['hourly']
 data_dictionary = {id : 
-                   {'Time': datetime.fromtimestamp(int(hour['dt'])) - timedelta(hours=UTC_OFFSET),
+                   {'Time': datetime.fromtimestamp(int(hour['dt'])) + timedelta(hours=UTC_OFFSET),
                     'Temperature': hour['temp'], 
                     'UV-Index': hour['uvi'], 
+                    'Wind Speed': hour['wind_speed'],
+                    'Cloudiness (%)': hour['clouds'],
                     'Probability of precipitation': hour['pop'],
-                    'Rain': hour['rain']['1h'] if 'rain' in hour else 0} 
-                    for id, hour in enumerate(hourly_data)}
+                    'Rain (mm/h)': hour['rain']['1h'] if 'rain' in hour else 0,
+                    'Snow (mm/h)': hour['snow']['1h'] if 'snow' in hour else 0
+                    } for id, hour in enumerate(hourly_data)}
 data = pd.DataFrame.from_dict(data_dictionary, orient='index')
 
 # Store today's data
 todays_date_latest_hour = datetime.today().replace(hour=LATEST_HOUR_OF_THE_DAY)
 todays_data = data[data['Time'] <= todays_date_latest_hour].copy()
+todays_data_html = todays_data.to_html()
 
 todays_data['Hour'] = todays_data['Time'].dt.strftime("%H:%M")
 todays_data['UV-Index (rounded)'] = round(todays_data['UV-Index'])
@@ -106,7 +110,19 @@ plt.close()
 #### SEND EMAIL ####
 
 text_body = 'plain text: <img src="cid:image1">'
-html_body = 'html text: <img src="cid:image1">'
+html_body = f"""
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1 user-scalable=no">
+</head>
+<body>
+<img src="cid:image1", alt="weather forecast">
+<br><hr><br>
+{todays_data_html.replace('class="dataframe"', 'class="dataframe" width="100%" cellpadding="0" cellspacing="0" style="min-width: 100%;"')}
+</body>
+</html>
+"""
 
 # include mail account credentials from environment variables
 EMAIL_ADDRESS = os.getenv('EMAIL_ADDRESS')
