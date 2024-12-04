@@ -91,8 +91,7 @@ ax2.plot(todays_data.index, todays_data['Temperature'], color='orange', marker='
 # Label data points
 for index in todays_data.index:
     temp = todays_data['Temperature'][index]
-    if temp > 0:
-        plt.text(index, temp+0.5, f'{round(temp)}°', color='orange', weight='bold', ha='center')
+    plt.text(index, temp+0.5, f'{round(temp)}°', color='orange', weight='bold', ha='center')
 
 # Plot styling
 y2_max = max(todays_data['Temperature'])+2.5
