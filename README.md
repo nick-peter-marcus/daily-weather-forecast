@@ -6,4 +6,4 @@ Weather data (temperature, UV-index, and probability of precipitation) are colle
 The data is plotted, stored as a .png file and then attached in the HTML-body of the email.
 
 This is an example for how the created graph looks:<br>
-![todays_weather](https://github.com/nick-peter-marcus/daily-weather-forecast/blob/main/todays_weather.png?raw=true)
+![todays_weather_example](https://github.com/nick-peter-marcus/daily-weather-forecast/blob/main/todays_weather_example.png?raw=true)

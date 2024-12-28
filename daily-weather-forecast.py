@@ -7,9 +7,8 @@ import requests
 import smtplib
 from dotenv import load_dotenv
 from datetime import datetime, timedelta
-from email.mime.multipart import MIMEMultipart
-from email.mime.text import MIMEText
-from email.mime.image import MIMEImage
+from email.message import EmailMessage
+from email.utils import make_msgid
 from scipy.interpolate import make_interp_spline
 
 load_dotenv()
@@ -71,6 +70,8 @@ table_columns_label = {"Hour": "Hour",
 todays_data_for_html = todays_data.filter(table_columns_label.keys())
 todays_data_for_html = todays_data_for_html.rename(columns=table_columns_label)
 todays_data_html = todays_data_for_html.to_html()
+todays_data_html = todays_data_html.replace('class="dataframe"', 
+                                            'class="dataframe" width="100%" cellpadding="2" cellspacing="0" style="min-width: 100%;"')
 
 
 
@@ -133,40 +134,38 @@ plt.close()
 
 
 #### SEND EMAIL ####
-text_body = 'plain text: <img src="cid:image1">'
-html_body = f"""
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1 user-scalable=no">
-</head>
-<body>
-<img src="cid:image1", alt="weather forecast">
-<br><hr><br>
-{todays_data_html.replace('class="dataframe"', 'class="dataframe" width="100%" cellpadding="0" cellspacing="0" style="min-width: 100%;"')}
-</body>
-</html>
-"""
-
 # include mail account credentials from environment variables
 EMAIL_ADDRESS = os.getenv('EMAIL_ADDRESS')
 EMAIL_PASSWORD = os.getenv('EMAIL_PASSWORD')
 EMAIL_TO = os.getenv('EMAIL_TO')
 
 # set up email message
-msg = MIMEMultipart('alternative')
+msg = EmailMessage()
 msg['Subject'] = "Today's weather forecast"
 msg['From'] = EMAIL_ADDRESS
 msg['To'] = EMAIL_TO
-msg.attach(MIMEText(text_body, 'plain'))
-msg.attach(MIMEText(html_body, 'html'))
 
-fp = open('todays_weather.png', 'rb')
-msgImage = MIMEImage(fp.read())
-fp.close()
+image_cid = make_msgid()
 
-msgImage.add_header('Content-ID', '<image1>')
-msg.attach(msgImage)
+html_content = f"""
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=yes">
+  <meta name="x-apple-disable-message-reformatting">
+</head>
+<body>
+  <img src="cid:{image_cid[1:-1]}", alt="weather_forecast">
+  <br><hr><br>
+  {todays_data_html}
+  </body>
+</html>
+"""
+
+msg.set_content(html_content, subtype="html")
+
+with open('todays_weather.png', 'rb') as fp:
+    msg.add_related(fp.read(), 'image', 'png', cid=image_cid)
 
 # send email
 with smtplib.SMTP('smtp.gmail.com', 587) as server:
