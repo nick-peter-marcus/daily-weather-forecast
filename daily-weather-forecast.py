@@ -33,33 +33,46 @@ r = requests.get(url, params)
 
 
 #### PREPARE DATA ####
-
 raw_json_data = r.json()
 hourly_data = raw_json_data['hourly']
-data_dictionary = {id : 
+data_dictionary = {id :
                    {'Time': datetime.fromtimestamp(int(hour['dt'])) + timedelta(hours=UTC_OFFSET),
-                    'Temperature': hour['temp'], 
-                    'UV-Index': hour['uvi'], 
-                    'Wind Speed': hour['wind_speed'],
+                    'Temperature': round(hour['temp'], 1),
+                    'UV-Index': hour['uvi'],
+                    'UV-Index (rounded)': int(round(hour['uvi'], 0)),
+                    'Wind Speed (m/s)': hour['wind_speed'],
+                    'Wind direction (degree)': hour['wind_deg'],
                     'Cloudiness (%)': hour['clouds'],
-                    'Probability of precipitation': hour['pop'],
+                    'Probability of precipitation (%)': int(hour['pop']*100),
+                    'Probability of precipitation (10% steps)': hour['pop']*10,
                     'Rain (mm/h)': hour['rain']['1h'] if 'rain' in hour else 0,
                     'Snow (mm/h)': hour['snow']['1h'] if 'snow' in hour else 0
                     } for id, hour in enumerate(hourly_data)}
 data = pd.DataFrame.from_dict(data_dictionary, orient='index')
 
-# Store today's data
+# Store/filter today's data
 todays_date_latest_hour = datetime.today().replace(hour=LATEST_HOUR_OF_THE_DAY)
 todays_data = data[data['Time'] <= todays_date_latest_hour].copy()
-todays_data_html = todays_data.to_html()
-
 todays_data['Hour'] = todays_data['Time'].dt.strftime("%H:%M")
-todays_data['UV-Index (rounded)'] = round(todays_data['UV-Index'])
-todays_data['Probability of precipitation (10% steps)'] = todays_data['Probability of precipitation']*10
+
+# Store data as html table
+table_columns_label = {"Hour": "Hour", 
+                      "Temperature": "Temp", 
+                      "UV-Index (rounded)" : "UV", 
+                      "Probability of precipitation (%)": "POP (%)",
+                      "Cloudiness (%)": "Clouds (%)",
+                      "Rain (mm/h)": "Rain (mm/h)", 
+                      "Snow (mm/h)": "Snow (mm/h)",
+                      "Wind Speed (m/s)": "Wind (m/s)",
+                      "Wind direction (degree)": "Wind (degree)"}
+
+todays_data_for_html = todays_data.filter(table_columns_label.keys())
+todays_data_for_html = todays_data_for_html.rename(columns=table_columns_label)
+todays_data_html = todays_data_for_html.to_html()
+
 
 
 #### PLOT ####
-
 plt.figure(figsize=(9,6))
 plt.xticks(todays_data.index, todays_data['Hour'])
 
@@ -107,7 +120,6 @@ plt.close()
 
 
 #### SEND EMAIL ####
-
 text_body = 'plain text: <img src="cid:image1">'
 html_body = f"""
 <!DOCTYPE html>
