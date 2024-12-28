@@ -1,5 +1,6 @@
 # import libraries
 import matplotlib.pyplot as plt
+import numpy as np
 import os
 import pandas as pd
 import requests
@@ -9,6 +10,7 @@ from datetime import datetime, timedelta
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.mime.image import MIMEImage
+from scipy.interpolate import make_interp_spline
 
 load_dotenv()
 UTC_OFFSET = int(os.getenv('UTC_OFFSET'))
@@ -98,18 +100,29 @@ plt.legend(loc='upper left')
 
 
 # Right axis: Temperature
+x2 = todays_data.index
+y2 = todays_data['Temperature']
+
+# Interpolate data for smoothened temperature curve
+x2_new = np.linspace(x2.min(), x2.max(), 100)
+interpolate = make_interp_spline(x2, y2, k=3)
+y2_new = interpolate(x2_new)
+
 ax2 = plt.twinx()
-ax2.plot(todays_data.index, todays_data['Temperature'], color='orange', marker='o', label='Temperature')
+ax2.plot(x2_new, y2_new, color="orange", label='Temperature')
+ax2.scatter(x2, y2, color="orange", marker="o")
 
 # Label data points
 for index in todays_data.index:
-    temp = todays_data['Temperature'][index]
+    temp = y2[index]
     plt.text(index, temp+0.5, f'{round(temp)}°', color='orange', weight='bold', ha='center')
 
 # Plot styling
-y2_max = max(todays_data['Temperature'])+2.5
-y2_min = min(todays_data['Temperature'])-2.5
-ax2.set_ylim(y2_min, y2_max)
+y2_lim_max = y2.max()+2.5
+y2_lim_min = y2.min()-2.5
+ax2.set_ylim(y2_lim_min, y2_lim_max)
+if y2_lim_min < 0:
+    plt.axhline(y=0, color='lightgrey')
 plt.yticks([])
 plt.legend(loc='upper right')
 
