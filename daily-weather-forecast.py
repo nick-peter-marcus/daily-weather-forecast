@@ -40,8 +40,9 @@ data_dictionary = {id :
                    {'Time': datetime.fromtimestamp(int(hour['dt'])) + timedelta(hours=UTC_OFFSET),
                     'Temperature': round(hour['temp'], 1),
                     'UV-Index': hour['uvi'],
-                    'UV-Index (rounded)': int(round(hour['uvi'], 0)),
+                    'UV-Index (rounded)': int(round(hour['uvi'])),
                     'Wind Speed (m/s)': hour['wind_speed'],
+                    'Wind Speed (km/h)': round(hour['wind_speed']*(60*60)/1000),
                     'Wind direction (degree)': hour['wind_deg'],
                     'Cloudiness (%)': hour['clouds'],
                     'Probability of precipitation (%)': int(hour['pop']*100),
@@ -50,6 +51,31 @@ data_dictionary = {id :
                     'Snow (mm/h)': hour['snow']['1h'] if 'snow' in hour else 0
                     } for id, hour in enumerate(hourly_data)}
 data = pd.DataFrame.from_dict(data_dictionary, orient='index')
+
+# Create 1 measure of quantity of precipitation (amount of rain + amount of snow)
+data["Prec. (mm/h)"] = data[["Rain (mm/h)", "Snow (mm/h)"]].sum(axis=1)
+
+# Convert degree of wind origin into compass direction
+def degree_to_cardinal_direction(x):
+    if x > 11.25 and x <= 33.75: return "NNE"
+    if x > 33.75 and x <= 56.25: return "NE"
+    if x > 56.25 and x <= 78.75: return "ENE"
+    if x > 78.75 and x <= 101.25: return "E"
+    if x > 101.25 and x <= 123.75: return "ESE"
+    if x > 123.75 and x <= 146.25: return "SE"
+    if x > 146.25 and x <= 168.75: return "SSE"
+    if x > 168.75 and x <= 191.25: return "S"
+    if x > 191.25 and x <= 213.75: return "SSW"
+    if x > 213.75 and x <= 236.25: return "SW"
+    if x > 236.25 and x <= 258.75: return "WSW"
+    if x > 258.75 and x <= 281.25: return "W"
+    if x > 281.25 and x <= 303.75: return "WNW"
+    if x > 303.75 and x <= 326.25: return "NW"
+    if x > 326.25 and x <= 348.75: return "NNW"
+    return "N"
+
+data["Wind direction (cardinal direction)"] = data["Wind direction (degree)"].apply(degree_to_cardinal_direction)
+
 
 # Store/filter today's data
 todays_date_latest_hour = datetime.today().replace(hour=LATEST_HOUR_OF_THE_DAY)
@@ -62,10 +88,13 @@ table_columns_label = {"Hour": "Hour",
                       "UV-Index (rounded)" : "UV", 
                       "Probability of precipitation (%)": "POP (%)",
                       "Cloudiness (%)": "Clouds (%)",
-                      "Rain (mm/h)": "Rain (mm/h)", 
-                      "Snow (mm/h)": "Snow (mm/h)",
-                      "Wind Speed (m/s)": "Wind (m/s)",
-                      "Wind direction (degree)": "Wind (degree)"}
+                      # "Rain (mm/h)": "Rain (mm/h)", 
+                      # "Snow (mm/h)": "Snow (mm/h)",
+                      "Prec. (mm/h)": "Prec. (mm/h)",
+                      # "Wind Speed (s/m)": "Wind (s/m)",
+                      "Wind Speed (km/h)": "Wind (km/h)",
+                      #"Wind direction (degree)": "Wind (degree)",
+                      "Wind direction (cardinal direction)": "Wind (from)"}
 
 todays_data_for_html = todays_data.filter(table_columns_label.keys())
 todays_data_for_html = todays_data_for_html.rename(columns=table_columns_label)
@@ -122,7 +151,7 @@ for index in todays_data.index:
 y2_lim_max = y2.max()+2.5
 y2_lim_min = y2.min()-2.5
 ax2.set_ylim(y2_lim_min, y2_lim_max)
-if y2_lim_min < 0:
+if y2_lim_min < 0 and y2_lim_max > 0:
     plt.axhline(y=0, color='lightgrey')
 plt.yticks([])
 plt.legend(loc='upper right')
