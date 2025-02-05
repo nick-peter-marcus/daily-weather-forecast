@@ -88,12 +88,8 @@ table_columns_label = {"Hour": "Hour",
                       "UV-Index (rounded)" : "UV", 
                       "Probability of precipitation (%)": "POP (%)",
                       "Cloudiness (%)": "Clouds (%)",
-                      # "Rain (mm/h)": "Rain (mm/h)", 
-                      # "Snow (mm/h)": "Snow (mm/h)",
                       "Prec. (mm/h)": "Prec. (mm/h)",
-                      # "Wind Speed (s/m)": "Wind (s/m)",
                       "Wind Speed (km/h)": "Wind (km/h)",
-                      #"Wind direction (degree)": "Wind (degree)",
                       "Wind direction (cardinal direction)": "Wind (from)"}
 
 todays_data_for_html = todays_data.filter(table_columns_label.keys())
@@ -121,7 +117,9 @@ for index in todays_data.index:
     
     pop = todays_data['Probability of precipitation (10% steps)'][index]
     if pop > 0:
+        prec = todays_data['Prec. (mm/h)'][index]
         plt.text(index+bar_width, pop+0.1, f'{round(pop*10)}%', color='darkblue', ha='center')
+        plt.text(index+bar_width, pop-1.5, f'{round(prec,1)}mm/h', color='darkblue', ha='center', rotation=90)
 
 # Plot styling
 plt.ylim(0,11)
