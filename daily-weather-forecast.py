@@ -10,6 +10,7 @@ from datetime import datetime, timedelta
 from email.message import EmailMessage
 from email.utils import make_msgid
 from scipy.interpolate import make_interp_spline
+from utils import drawPieMarker
 
 load_dotenv()
 UTC_OFFSET = int(os.getenv('UTC_OFFSET'))
@@ -45,6 +46,7 @@ data_dictionary = {id :
                     'Wind Speed (km/h)': round(hour['wind_speed']*(60*60)/1000),
                     'Wind direction (degree)': hour['wind_deg'],
                     'Cloudiness (%)': hour['clouds'],
+                    'Sunniness (%)': 100-hour['clouds'],
                     'Probability of precipitation (%)': int(hour['pop']*100),
                     'Probability of precipitation (10% steps)': hour['pop']*10,
                     'Rain (mm/h)': hour['rain']['1h'] if 'rain' in hour else 0,
@@ -101,30 +103,38 @@ todays_data_html = todays_data_html.replace('class="dataframe"',
 
 
 #### PLOT ####
-plt.figure(figsize=(9,6))
-plt.xticks(todays_data.index, todays_data['Hour'])
+fig, (ax0, ax1) = plt.subplots(figsize=(9,6), nrows=2, height_ratios=[10, 1], sharex=True)
+plt.subplots_adjust(hspace=0)
 
 # Left y-axis: UV-Index and Chance of Rain
 bar_width = 0.35
-plt.bar(todays_data.index, todays_data['UV-Index (rounded)'], bar_width, color='firebrick', label='UV-Index')
-plt.bar(todays_data.index+bar_width, todays_data['Probability of precipitation (10% steps)'], bar_width, color='lightblue', label='Chance of Rain')
+ax0.bar(todays_data.index, 
+        todays_data['UV-Index (rounded)'], 
+        bar_width, 
+        color='firebrick',
+        label='UV-Index')
+ax0.bar(todays_data.index+bar_width, 
+        todays_data['Probability of precipitation (10% steps)'], 
+        bar_width, 
+        color='lightblue', 
+        label='Chance of Rain')
 
 # Label data points
 for index in todays_data.index:
     uvi = todays_data['UV-Index (rounded)'][index]
     if uvi > 0:
-        plt.text(index, uvi/2, int(uvi), color='white', weight='bold', ha='center')
+        ax0.text(index, uvi/2, int(uvi), color='white', weight='bold', ha='center')
     
     pop = todays_data['Probability of precipitation (10% steps)'][index]
     if pop > 0:
         prec = todays_data['Prec. (mm/h)'][index]
-        plt.text(index+bar_width, pop+0.1, f'{round(pop*10)}%', color='darkblue', ha='center')
-        plt.text(index+bar_width, pop-1.5, f'{round(prec,1)}mm/h', color='darkblue', ha='center', rotation=90)
+        ax0.text(index+bar_width, pop+0.1, f'{round(pop*10)}%', color='darkblue', ha='center')
+        ax0.text(index+bar_width, pop-1.5, f'{round(prec,1)}mm/h', color='darkblue', ha='center', rotation=90)
 
 # Plot styling
-plt.ylim(0,11)
-plt.yticks([])
-plt.legend(loc='upper left')
+ax0.set_ylim(0,11)
+ax0.set_yticks([])
+ax0.legend(loc='upper left')
 
 
 # Right axis: Temperature
@@ -136,23 +146,31 @@ x2_new = np.linspace(x2.min(), x2.max(), 100)
 interpolate = make_interp_spline(x2, y2, k=3)
 y2_new = interpolate(x2_new)
 
-ax2 = plt.twinx()
-ax2.plot(x2_new, y2_new, color="orange", label='Temperature')
-ax2.scatter(x2, y2, color="orange", marker="o")
+ax0_twin = ax0.twinx()
+ax0_twin.plot(x2_new, y2_new, color="orange", label='Temperature')
+ax0_twin.scatter(x2, y2, color="orange", marker="o")
 
 # Label data points
 for index in todays_data.index:
     temp = y2[index]
-    plt.text(index, temp+0.5, f'{round(temp)}°', color='orange', weight='bold', ha='center')
+    ax0_twin.text(index, temp+0.5, f'{round(temp)}°', color='orange', weight='bold', ha='center')
 
 # Plot styling
 y2_lim_max = y2.max()+2.5
 y2_lim_min = y2.min()-2.5
-ax2.set_ylim(y2_lim_min, y2_lim_max)
+ax0_twin.set_ylim(y2_lim_min, y2_lim_max)
 if y2_lim_min < 0 and y2_lim_max > 0:
-    plt.axhline(y=0, color='lightgrey')
-plt.yticks([])
-plt.legend(loc='upper right')
+    ax0_twin.axhline(y=0, color='lightgrey')
+ax0_twin.set_yticks([])
+ax0_twin.legend(loc='upper right')
+
+
+# BOTTOM FIGURE - CLOUDINESS
+for index in todays_data.index:
+    c, s = todays_data.loc[index, ['Cloudiness (%)', 'Sunniness (%)']] / 100
+    drawPieMarker(xpos=index, ypos=0, ratios=[s, c], size=250, colors=['yellow', 'grey'], plot=ax1)
+ax1.set_yticks([])
+ax1.set_xticks(todays_data.index, todays_data['Hour'])
 
 # Export plot
 plt.savefig('todays_weather.png', bbox_inches='tight')
