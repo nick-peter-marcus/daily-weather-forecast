@@ -112,7 +112,7 @@ for index in todays_data.index:
     if pop > 0:
         prec = todays_data['Prec. (mm/h)'][index]
         ax0.text(index + bar_offset, pop+0.1, f'{round(pop*10)}%', color='darkblue', ha='center')
-        ax0.text(index + bar_offset, pop-1.5, f'{round(prec,1)}mm/h', color='darkblue', ha='center', rotation=90)
+        ax0.text(index + bar_offset, pop-1, f'{round(prec,1)}\nmm/h', color='darkblue', ha='center')
 
 # Plot styling
 ax0.set_ylim(0,11)
