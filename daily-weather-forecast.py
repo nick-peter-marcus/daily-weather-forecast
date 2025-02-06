@@ -90,12 +90,13 @@ plt.subplots_adjust(hspace=0)
 
 # Left y-axis: UV-Index and Chance of Rain
 bar_width = 0.35
-ax0.bar(todays_data.index, 
+bar_offset = bar_width / 2
+ax0.bar(todays_data.index - bar_offset, 
         todays_data['UV-Index (rounded)'], 
         bar_width, 
         color='firebrick',
         label='UV-Index')
-ax0.bar(todays_data.index+bar_width, 
+ax0.bar(todays_data.index + bar_offset, 
         todays_data['Probability of precipitation (10% steps)'], 
         bar_width, 
         color='lightblue', 
@@ -105,13 +106,13 @@ ax0.bar(todays_data.index+bar_width,
 for index in todays_data.index:
     uvi = todays_data['UV-Index (rounded)'][index]
     if uvi > 0:
-        ax0.text(index, uvi/2, int(uvi), color='white', weight='bold', ha='center')
+        ax0.text(index - bar_offset, uvi/2, int(uvi), color='white', weight='bold', ha='center')
     
     pop = todays_data['Probability of precipitation (10% steps)'][index]
     if pop > 0:
         prec = todays_data['Prec. (mm/h)'][index]
-        ax0.text(index+bar_width, pop+0.1, f'{round(pop*10)}%', color='darkblue', ha='center')
-        ax0.text(index+bar_width, pop-1.5, f'{round(prec,1)}mm/h', color='darkblue', ha='center', rotation=90)
+        ax0.text(index + bar_offset, pop+0.1, f'{round(pop*10)}%', color='darkblue', ha='center')
+        ax0.text(index + bar_offset, pop-1.5, f'{round(prec,1)}mm/h', color='darkblue', ha='center', rotation=90)
 
 # Plot styling
 ax0.set_ylim(0,11)
