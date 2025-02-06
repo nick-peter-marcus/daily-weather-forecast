@@ -10,7 +10,7 @@ from datetime import datetime, timedelta
 from email.message import EmailMessage
 from email.utils import make_msgid
 from scipy.interpolate import make_interp_spline
-from utils import drawPieMarker
+from utils import drawPieMarker, degree_to_cardinal_direction
 
 load_dotenv()
 UTC_OFFSET = int(os.getenv('UTC_OFFSET'))
@@ -57,25 +57,7 @@ data = pd.DataFrame.from_dict(data_dictionary, orient='index')
 # Create 1 measure of quantity of precipitation (amount of rain + amount of snow)
 data["Prec. (mm/h)"] = data[["Rain (mm/h)", "Snow (mm/h)"]].sum(axis=1)
 
-# Convert degree of wind origin into compass direction
-def degree_to_cardinal_direction(x):
-    if x > 11.25 and x <= 33.75: return "NNE"
-    if x > 33.75 and x <= 56.25: return "NE"
-    if x > 56.25 and x <= 78.75: return "ENE"
-    if x > 78.75 and x <= 101.25: return "E"
-    if x > 101.25 and x <= 123.75: return "ESE"
-    if x > 123.75 and x <= 146.25: return "SE"
-    if x > 146.25 and x <= 168.75: return "SSE"
-    if x > 168.75 and x <= 191.25: return "S"
-    if x > 191.25 and x <= 213.75: return "SSW"
-    if x > 213.75 and x <= 236.25: return "SW"
-    if x > 236.25 and x <= 258.75: return "WSW"
-    if x > 258.75 and x <= 281.25: return "W"
-    if x > 281.25 and x <= 303.75: return "WNW"
-    if x > 303.75 and x <= 326.25: return "NW"
-    if x > 326.25 and x <= 348.75: return "NNW"
-    return "N"
-
+# Determine cardinal direction from degree of wind
 data["Wind direction (cardinal direction)"] = data["Wind direction (degree)"].apply(degree_to_cardinal_direction)
 
 
