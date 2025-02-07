@@ -21,21 +21,29 @@ def degree_to_cardinal_direction(x: int) -> str:
     if x > 326.25 and x <= 348.75: return "NNW"
     return "N"
 
-def drawPieMarker(xpos: int, ypos: int, ratios: list[int], size: int, colors: list[str], plot=plt) -> None:
+
+def draw_pie(dist: list[int], xpos: int, ypos: int, size: int, colors: list[str], ax=None) -> None:
     """ 
     Draws scatterplot with pie charts as markers 
-    Adapted from: https://stackoverflow.com/a/56338489
+    Adapted from: https://stackoverflow.com/questions/56337732/
     """
+    if ax is None:
+        fig, ax = plt.subplots(figsize=(10,8))
+
+    # for incremental pie slices
+    cumsum = np.cumsum(dist)
+    cumsum = cumsum/cumsum[-1]
+    pie = [0] + cumsum.tolist()
     markers = []
-    previous = 0
-    # calculate the points of the pie pieces
-    for color, ratio in zip(colors, ratios):
-        this = 2 * np.pi * ratio + previous
-        x  = [0] + np.cos(np.linspace(previous, this, 10)).tolist() + [0]
-        y  = [0] + np.sin(np.linspace(previous, this, 10)).tolist() + [0]
+
+    for r1, r2, color in zip(pie[:-1], pie[1:], colors):
+        angles = np.linspace(2*np.pi*r1, 2*np.pi*r2)
+        x = [0] + np.cos(angles).tolist()
+        y = [0] + np.sin(angles).tolist()
         xy = np.column_stack([x, y])
-        previous = this
+
         markers.append({'marker':xy, 's':size, 'facecolor':color})
-    # scatter each of the pie pieces to create pies
-    for marker in markers:
-        plot.scatter(xpos, ypos, **marker)
+        
+        # scatter each of the pie pieces to create pies
+        for marker in markers:
+            ax.scatter(xpos, ypos, **marker)

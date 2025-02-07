@@ -11,7 +11,7 @@ def main():
     from email.message import EmailMessage
     from email.utils import make_msgid
     from scipy.interpolate import make_interp_spline
-    from utils import drawPieMarker, degree_to_cardinal_direction
+    from utils import degree_to_cardinal_direction, draw_pie
 
 
     #### ENVIRONMENT VARIABLES ####
@@ -98,7 +98,7 @@ def main():
     plt.subplots_adjust(hspace=0)
 
     ## TOP FIGURE: UV, POP, TEMPERATURE
-   # LEFT Y-AXIS: UV, POP
+    # LEFT Y-AXIS: UV, POP
     uv_data = todays_data['UV-Index (rounded)']
     pop_data = todays_data['Probability of precipitation (10% steps)']
 
@@ -159,8 +159,13 @@ def main():
 
     ## BOTTOM FIGURE - CLOUDINESS
     for index in todays_data.index:
-        c, s = todays_data.loc[index, ['Cloudiness (%)', 'Sunniness (%)']] / 100
-        drawPieMarker(xpos=index, ypos=0, ratios=[s, c], size=250, colors=['yellow', 'grey'], plot=ax1)
+        clouds = todays_data['Cloudiness (%)'][index] / 100
+        # If there's 100% clouds, draw pie piece last so that only grey color is visible (and vice versa)
+        pie_dist = [clouds, 1-clouds] if clouds < 1 else [1-clouds, clouds]
+        pie_colors = ['grey', 'yellow'] if clouds < 1 else ['yellow', 'grey']
+        draw_pie(dist=pie_dist, xpos=index, ypos=0.75, size=250, colors=pie_colors, ax=ax1)
+        
+    # Plot styling
     ax1.set_yticks([])
     ax1.set_xticks(todays_data.index, todays_data['Hour'])
 
