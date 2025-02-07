@@ -98,19 +98,17 @@ def main():
     plt.subplots_adjust(hspace=0)
 
     ## TOP FIGURE: UV, POP, TEMPERATURE
-    # LEFT Y-AXIS: UV, POP
+   # LEFT Y-AXIS: UV, POP
+    uv_data = todays_data['UV-Index (rounded)']
+    pop_data = todays_data['Probability of precipitation (10% steps)']
+
+    # Set bar width and offset. If only uv or pop are >0 all day, offset will be 0.
     bar_width = 0.35
-    bar_offset = bar_width / 2
-    ax0.bar(todays_data.index - bar_offset, 
-            todays_data['UV-Index (rounded)'], 
-            bar_width, 
-            color='firebrick',
-            label='UV-Index')
-    ax0.bar(todays_data.index + bar_offset, 
-            todays_data['Probability of precipitation (10% steps)'], 
-            bar_width, 
-            color='lightblue', 
-            label='Chance of Rain')
+    bar_offset = bar_width/2 if max(uv_data) > 0 and max(pop_data) > 0 else 0
+
+    # Draw bars
+    ax0.bar(todays_data.index-bar_offset, uv_data, bar_width, color='firebrick', label='UV-Index')
+    ax0.bar(todays_data.index+bar_offset, pop_data, bar_width, color='lightblue', label='Chance of Rain')
 
     # Label data points
     for index in todays_data.index:
