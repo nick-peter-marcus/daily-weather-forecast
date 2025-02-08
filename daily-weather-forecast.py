@@ -17,13 +17,14 @@ def main():
     #### ENVIRONMENT VARIABLES ####
     load_dotenv()
     UTC_OFFSET = int(os.getenv('UTC_OFFSET'))
-    LATEST_HOUR_OF_THE_DAY = 20
     EMAIL_ADDRESS = os.getenv('EMAIL_ADDRESS')
     EMAIL_PASSWORD = os.getenv('EMAIL_PASSWORD')
     EMAIL_TO = os.getenv('EMAIL_TO')
     API_KEY = os.getenv('API_KEY')
     LATITUDE = os.getenv('LATITUDE')
     LONGITUDE = os.getenv('LONGITUDE')
+    
+    LATEST_HOUR_OF_THE_DAY = 20
 
 
     #### API CALL ####
@@ -48,11 +49,9 @@ def main():
             'Temperature': round(hour['temp'], 1),
             'UV-Index': hour['uvi'],
             'UV-Index (rounded)': int(round(hour['uvi'])),
-            'Wind Speed (m/s)': hour['wind_speed'],
             'Wind Speed (km/h)': round(hour['wind_speed']*(60*60)/1000),
             'Wind direction (degree)': hour['wind_deg'],
             'Cloudiness (%)': hour['clouds'],
-            'Sunniness (%)': 100-hour['clouds'],
             'Probability of precipitation (%)': int(hour['pop']*100),
             'Probability of precipitation (10% steps)': hour['pop']*10,
             'Rain (mm/h)': hour['rain']['1h'] if 'rain' in hour else 0,
@@ -83,18 +82,19 @@ def main():
         "Cloudiness (%)": "Clouds (%)",
         "Prec. (mm/h)": "Prec. (mm/h)",
         "Wind Speed (km/h)": "Wind (km/h)",
+        "Wind direction (degree)": "Wind (degree)",
         "Wind direction (cardinal direction)": "Wind (from)"
     }
 
     todays_data_for_html = todays_data.filter(table_columns_label.keys())
     todays_data_for_html = todays_data_for_html.rename(columns=table_columns_label)
-    todays_data_html = todays_data_for_html.to_html()
+    todays_data_html = todays_data_for_html.to_html(index=False)
     html_inline_style = 'class="dataframe" width="100%" cellpadding="2" cellspacing="0" style="min-width: 100%;"'
     todays_data_html = todays_data_html.replace('class="dataframe"', html_inline_style)
 
 
     #### PLOT ####
-    fig, (ax0, ax1) = plt.subplots(figsize=(9,6), nrows=2, height_ratios=[10, 1], sharex=True)
+    fig, (ax0, ax1) = plt.subplots(figsize=(9,6), nrows=2, height_ratios=[10, 2], sharex=True)
     plt.subplots_adjust(hspace=0)
 
     ## TOP FIGURE: UV, POP, TEMPERATURE
@@ -157,15 +157,37 @@ def main():
     ax0_twin.legend(loc='upper right')
 
 
-    ## BOTTOM FIGURE - CLOUDINESS
+    ## BOTTOM FIGURE - CLOUDINESS + WIND
     for index in todays_data.index:
+        # CLOUDINESS
         clouds = todays_data['Cloudiness (%)'][index] / 100
         # If there's 100% clouds, draw pie piece last so that only grey color is visible (and vice versa)
         pie_dist = [clouds, 1-clouds] if clouds < 1 else [1-clouds, clouds]
         pie_colors = ['grey', 'yellow'] if clouds < 1 else ['yellow', 'grey']
         draw_pie(dist=pie_dist, xpos=index, ypos=0.75, size=250, colors=pie_colors, ax=ax1)
         
+        # WIND
+        wind_degree = todays_data['Wind direction (degree)'][index]
+        wind_speed = todays_data['Wind Speed (km/h)'][index]
+        # Proportionally size arrows according to wind speed
+        arrow_size = min(30, max(wind_speed*1.5, 10))
+        # Mark degrees 155-245 and 335-65 as purple, as they fall in my way of commute
+        arrow_color = "purple" if wind_degree in range(155,245) or wind_degree > 335 or wind_degree < 65 else "black"
+        # Style bold if below 10 (for better readability) and >30 (for emphasis)
+        arrow_weight = "bold" if wind_speed < 10 or wind_speed > 30 else None
+        # Draw arrows
+        ax1.text(index, 0.25, "\u2192", 
+                 ha="center", va="center", 
+                 color=arrow_color, 
+                 size=arrow_size, 
+                 weight=arrow_weight, 
+                 rotation=270-wind_degree)
+        # Annotate wind speed
+        ax1.text(index, 0.025, f'{wind_speed:.0f}', ha="right", va="bottom", size=8)
+
     # Plot styling
+    ax1.set_ylim(0,1)
+    ax1.axhline(0.5, color="black", linewidth=1)
     ax1.set_yticks([])
     ax1.set_xticks(todays_data.index, todays_data['Hour'])
 
