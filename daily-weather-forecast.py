@@ -6,6 +6,7 @@ def main():
     import pandas as pd
     import requests
     import smtplib
+    import time
     from dotenv import load_dotenv
     from datetime import datetime, timedelta
     from email.message import EmailMessage
@@ -16,7 +17,6 @@ def main():
 
     #### ENVIRONMENT VARIABLES ####
     load_dotenv()
-    UTC_OFFSET = int(os.getenv('UTC_OFFSET'))
     EMAIL_ADDRESS = os.getenv('EMAIL_ADDRESS')
     EMAIL_PASSWORD = os.getenv('EMAIL_PASSWORD')
     EMAIL_TO = os.getenv('EMAIL_TO')
@@ -41,8 +41,13 @@ def main():
 
     #### PREPARE DATA ####
     raw_json_data = r.json()
-    hourly_data = raw_json_data['hourly']
 
+    # Determine timezone offset (difference between local/machine and requested location timezone)
+    location_timezone_offset = raw_json_data['timezone_offset']
+    local_timezone_offset = time.timezone if (time.localtime().tm_isdst == 0) else time.altzone
+    UTC_OFFSET = (local_timezone_offset + location_timezone_offset)/60/60
+
+    hourly_data = raw_json_data['hourly']
     data_dictionary = {
         id: {
             'Time': datetime.fromtimestamp(int(hour['dt'])) + timedelta(hours=UTC_OFFSET),
