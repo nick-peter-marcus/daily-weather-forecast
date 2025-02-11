@@ -106,6 +106,7 @@ def main():
     # LEFT Y-AXIS: UV, POP
     uv_data = todays_data['UV-Index (rounded)']
     pop_data = todays_data['Probability of precipitation (10% steps)']
+    prec_data = todays_data['Prec. (mm/h)']
 
     # Set bar width and offset. If only uv or pop are >0 all day, offset will be 0.
     bar_width = 0.35
@@ -117,18 +118,28 @@ def main():
 
     # Label data points
     for index in todays_data.index:
-        uvi = todays_data['UV-Index (rounded)'][index]
+        uvi = uv_data[index]
         if uvi > 0:
             ax0.text(index - bar_offset, uvi/2, int(uvi), color='white', weight='bold', ha='center')
         
-        pop = todays_data['Probability of precipitation (10% steps)'][index]
+        pop = pop_data[index]
         if pop > 0:
-            prec = todays_data['Prec. (mm/h)'][index]
-            ax0.text(index + bar_offset, pop+0.1, f'{round(pop*10)}%', color='darkblue', ha='center')
-            ax0.text(index + bar_offset, pop-1, f'{round(prec,1)}\nmm/h', color='darkblue', ha='center')
+            prec = prec_data[index]
+            if pop < 2 and prec == 0:
+                ax0.text(index + bar_offset, pop+0.1, f'{round(pop*10)}%', color='darkblue', ha='center')
+            if pop < 2 and prec > 0:
+                ax0.text(index + bar_offset, pop+0.1, f'{round(prec,1)}\nmm/h\n{round(pop*10)}%', color='darkblue', ha='center')
+            if pop >= 2 and prec == 0:
+                ax0.text(index + bar_offset, pop-1.0, f'{round(pop*10)}%', color='darkblue', ha='center', va='center', rotation=90)
+            if pop >= 2 and prec > 0:
+                ax0.text(index + bar_offset, pop+0.1, f'{round(prec,1)}\nmm/h', color='darkblue', ha='center')
+                ax0.text(index + bar_offset, pop-1.0, f'{round(pop*10)}%', color='darkblue', ha='center', va='center', rotation=90)
 
     # Plot styling
-    ax0.set_ylim(0,11)
+    if max(prec_data) > 0:
+        ax0.set_ylim(0,13)
+    else:
+        ax0.set_ylim(0,11)
     ax0.set_yticks([])
     ax0.legend(loc='upper left')
 
