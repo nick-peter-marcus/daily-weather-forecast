@@ -8,7 +8,7 @@ def main():
     import smtplib
     import time
     from dotenv import load_dotenv
-    from datetime import datetime, timedelta
+    from datetime import date, datetime, timedelta
     from email.message import EmailMessage
     from email.utils import make_msgid
     from scipy.interpolate import make_interp_spline
@@ -23,8 +23,10 @@ def main():
     API_KEY = os.getenv('API_KEY')
     LATITUDE = os.getenv('LATITUDE')
     LONGITUDE = os.getenv('LONGITUDE')
+    CITY_NAME = os.getenv('CITY_NAME')
     
     LATEST_HOUR_OF_THE_DAY = 20
+    todays_date = date.today().strftime("%A, %d. %B %Y")
 
 
     #### API CALL ####
@@ -101,6 +103,7 @@ def main():
     #### PLOT ####
     fig, (ax0, ax1) = plt.subplots(figsize=(9,6), nrows=2, height_ratios=[10, 2], sharex=True)
     plt.subplots_adjust(hspace=0)
+    ax0.set_title(f"Weather Forecast for {CITY_NAME}\n{todays_date}")
 
     ## TOP FIGURE: UV, POP, TEMPERATURE
     # LEFT Y-AXIS: UV, POP
