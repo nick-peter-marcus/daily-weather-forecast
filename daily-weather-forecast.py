@@ -181,6 +181,7 @@ def main():
         ax0_twin.set_ylim(y2_lim_min, y2_lim_max)
         if y2_lim_min < 0 and y2_lim_max > 0: # Add 0 degree line
             ax0_twin.axhline(y=0, color='lightgrey')
+            ax0_twin.text(todays_data.index[0]-0.75, 0.2, '0°', color='lightgrey')
         ax0_twin.set_yticks([])
         ax0_twin.legend(loc='upper right')
 
