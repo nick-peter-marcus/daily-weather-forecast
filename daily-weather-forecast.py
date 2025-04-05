@@ -6,13 +6,13 @@ def main():
     import pandas as pd
     import requests
     import smtplib
-    import time
+    import time as t
     from dotenv import load_dotenv
-    from datetime import date, datetime, timedelta
+    from datetime import date, datetime, time, timedelta
     from email.message import EmailMessage
     from email.utils import make_msgid
     from scipy.interpolate import make_interp_spline
-    from utils import degree_to_cardinal_direction, draw_pie, rescale_data, uv_styling
+    from utils import draw_pie, rescale_data, uv_styling
 
     APP_DIRECTORY = os.path.abspath(os.path.dirname(__file__))
 
@@ -24,10 +24,9 @@ def main():
     API_KEY = os.getenv("API_KEY")
     N_CITIES = int(os.getenv("N_CITIES"))
 
-
     #### DATE SPECIFICATIONS ####    
-    HOURS_FROM_TO = (7, 20)
-    todays_date_str = date.today().strftime("%A, %d. %B %Y")
+    HOUR_FROM = 7
+    HOUR_TO = 20
 
 
     #### CREATE DATA & CHARTS FOR ALL CITIES PASSED IN .ENV ####
@@ -54,13 +53,13 @@ def main():
 
         # Determine timezone offset (difference between local/machine and requested location timezone)
         location_timezone_offset = raw_json_data["timezone_offset"]
-        local_timezone_offset = time.timezone if (time.localtime().tm_isdst == 0) else time.altzone
-        UTC_OFFSET = (local_timezone_offset + location_timezone_offset)/60/60
+        local_timezone_offset = t.timezone if (t.localtime().tm_isdst == 0) else t.altzone
+        utc_offset_hours = (local_timezone_offset + location_timezone_offset)/60/60
 
         hourly_data = raw_json_data["hourly"]
         data_dictionary = {
             id: {
-                "Time": datetime.fromtimestamp(int(hour["dt"])) + timedelta(hours=UTC_OFFSET),
+                "Time": datetime.fromtimestamp(hour["dt"]) + timedelta(hours=utc_offset_hours),
                 "Temperature": round(hour["temp"], 1),
                 "UV-Index": hour["uvi"],
                 "Wind Speed (km/h)": round(hour["wind_speed"]*(60*60)/1000),
@@ -72,24 +71,31 @@ def main():
             } for id, hour in enumerate(hourly_data)
         }
         data = pd.DataFrame.from_dict(data_dictionary, orient="index")
-
+        
         # Create one measure of quantity of precipitation (amount of rain + amount of snow)
         data["Prec. (mm/h)"] = data[["Rain (mm/h)", "Snow (mm/h)"]].sum(axis=1)
 
-        # Determine cardinal direction from degree of wind
-        data["Wind direction (cardinal direction)"] = data["Wind direction (degree)"].apply(degree_to_cardinal_direction)
+        # Add time (hour) as string
+        data["Hour"] = data["Time"].dt.strftime("%H:%M")
 
-        # Store/filter today"s data
-        todays_date_from = datetime(date.today().year, date.today().month, date.today().day, HOURS_FROM_TO[0])
-        todays_date_to = datetime(date.today().year, date.today().month, date.today().day, HOURS_FROM_TO[1])
+        # Store/filter today's data
+        earliest_data_date = data["Time"].dt.date.min()
+        earliest_data_hour = int(data["Time"].min().strftime("%H"))
+        
+        selected_date = earliest_data_date
+        if earliest_data_hour >= HOUR_TO:
+            selected_date = earliest_data_date + timedelta(days=1)
+
+        todays_date_from = datetime.combine(selected_date, time(HOUR_FROM))
+        todays_date_to = datetime.combine(selected_date, time(HOUR_TO))
+
         todays_data = data[(data["Time"] >= todays_date_from) & (data["Time"] <= todays_date_to)].copy()
-        todays_data["Hour"] = todays_data["Time"].dt.strftime("%H:%M")
-
 
         #### PLOT ####
         fig, (ax0, ax1) = plt.subplots(figsize=(9,6), nrows=2, height_ratios=[9, 3], sharex=True)
         plt.subplots_adjust(hspace=0)
-        ax0.set_title(f"Weather Forecast for {city_name}\n{todays_date_str}")
+        selected_date_str = selected_date.strftime("%A, %d. %B %Y")
+        ax0.set_title(f"Weather Forecast for {city_name}\n{selected_date_str}")
 
         ## TOP FIGURE: POP & TEMPERATURE
         # LEFT Y-AXIS: POP
@@ -116,7 +122,7 @@ def main():
                     color="darkblue",
                     ha="center",
                     size=8,
-                    linespacing=2
+                    linespacing=1.5
                 )
 
         # Plot styling
@@ -176,7 +182,7 @@ def main():
         for index in todays_data.index:
             # CLOUDINESS
             clouds = clouds_data[index]
-            # If there"s 100% clouds, draw pie piece last so that only grey color is visible (and vice versa)
+            # If there's 100% clouds, draw pie piece last so that only grey color is visible (and vice versa)
             pie_dist = [clouds, 1-clouds] if clouds < 1 else [1-clouds, clouds]
             pie_colors = ["grey", "yellow"] if clouds < 1 else ["yellow", "grey"]
             draw_pie(dist=pie_dist, xpos=index, ypos=5, size=250, colors=pie_colors, ax=ax1)
@@ -218,8 +224,8 @@ def main():
                     x=index, 
                     y=uv_styles["text_y_pos"], 
                     s=data_label, 
-                    color=uv_styles["font_color"], 
-                    weight="bold", 
+                    color=uv_styles["font_color"],
+                    weight="bold",  
                     ha="center", 
                     va="center"
                 )
@@ -269,7 +275,7 @@ def main():
         with open(file_path, "rb") as fp:
             msg.add_related(fp.read(), "image", "png", cid=image_cids[N])
 
-    # send email
+    # Send email
     with smtplib.SMTP("smtp.gmail.com", 587) as server:
         server.starttls()
         server.login(EMAIL_ADDRESS, EMAIL_PASSWORD)
