@@ -131,9 +131,12 @@ def main():
         # Interpolate data for smoothened temperature curve
         x2 = todays_data.index
         y2 = todays_data["Temperature"]
-        x2_new = np.linspace(x2.min(), x2.max(), 100)
-        interpolate = make_interp_spline(x2, y2, k=3)
-        y2_new = interpolate(x2_new)
+        if len(x2) >= 3:
+            x2_new = np.linspace(x2.min(), x2.max(), 100)
+            interpolate = make_interp_spline(x2, y2, k=3)
+            y2_new = interpolate(x2_new)
+        else:
+            x2_new, y2_new = x2, y2
 
         # Plot data
         ax0_twin.plot(x2_new, y2_new, color="orange", label="Temperature")
