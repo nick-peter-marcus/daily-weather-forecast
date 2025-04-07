@@ -1,3 +1,4 @@
+import matplotlib.patheffects as pe
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -44,14 +45,29 @@ def uv_styling(uv: int, uv_scaled: int) -> dict:
     if uv <= 7: # 6–7	Orange	"High"
         plot_color, font_color = ("orange", "white")
     if uv <= 5: # 3–5	Yellow	"Moderate"
-        plot_color, font_color = ("yellow", "grey")
+        plot_color, font_color = ("yellow", "white")
     if uv <= 2: # 0–2	Green "Low"
         plot_color, font_color = ("green", "white")
     
+    # Determine y-axis position
     text_y_pos = uv_scaled/2
     if uv_scaled < 0.8:
         text_y_pos = uv_scaled+0.4
-    if uv_scaled < 0.8 and plot_color != "yellow":
-        font_color = plot_color
 
-    return {"plot_color": plot_color, "font_color": font_color, "text_y_pos": text_y_pos}  
+    # Define font color for smaller graphs / those that are annotated above the bar
+    if uv_scaled < 0.8:
+        font_color = plot_color
+    
+    # Set path_effect (border outline / text shadow) if color is yellow
+    path_effects = None
+    if plot_color == "yellow":
+        path_effects = [pe.withStroke(linewidth=1, foreground="black")]
+
+    uv_style_dict = {
+        "plot_color": plot_color, 
+        "font_color": font_color, 
+        "text_y_pos": text_y_pos,
+        "path_effects": path_effects,
+    }
+
+    return uv_style_dict

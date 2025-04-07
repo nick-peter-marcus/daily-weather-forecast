@@ -1,5 +1,6 @@
 def main():
     # import libraries
+    import matplotlib.patheffects as pe
     import matplotlib.pyplot as plt
     import numpy as np
     import os
@@ -118,7 +119,7 @@ def main():
                 ax0.text(
                     x=index,
                     y=3,
-                    s=f"{pop}%\n{round(prec,1)}",
+                    s=f"{pop}%\n{round(prec,1):.1f}",
                     color="darkblue",
                     ha="center",
                     size=8,
@@ -211,7 +212,7 @@ def main():
             # Annotate wind speed
             ax1.text(index, 2.1, f"{wind_speed:.0f}", ha="right", va="bottom", size=8)
             
-        # UV-INDEX
+            # UV-INDEX
             uvi = uv_data[index] 
             uvi_scaled = uv_data_scaled[index] 
             uv_styles = uv_styling(uvi, uvi_scaled)
@@ -225,11 +226,11 @@ def main():
                     y=uv_styles["text_y_pos"], 
                     s=data_label, 
                     color=uv_styles["font_color"],
+                    path_effects=uv_styles["path_effects"],
                     weight="bold",  
                     ha="center", 
                     va="center"
                 )
-
 
         # Plot styling
         ax1.set_ylim(0,6)
