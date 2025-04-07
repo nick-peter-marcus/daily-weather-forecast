@@ -71,3 +71,35 @@ def uv_styling(uv: int, uv_scaled: int) -> dict:
     }
 
     return uv_style_dict
+
+
+def wind_styling(wind_degree: int, wind_speed: int) -> dict:
+    # Proportionally size arrows according to wind speed
+    arrow_size = min(30, max(wind_speed*1.5, 10))
+    # Mark degrees 155-245 and 335-65 as purple, as they fall in my way of commute
+    arrow_color = "purple" if wind_degree in range(155,245) or wind_degree > 335 or wind_degree < 65 else "black"
+    # Style bold if below 10 (for better readability) and >30 (for emphasis)
+    arrow_weight = "bold" if wind_speed < 10 or wind_speed > 30 else None
+
+    # Position annotation based on degree
+    if wind_speed < 10:
+        wind_text_ha, wind_text_y_pos = ("left", 2.1)
+    else:
+        if wind_degree in range(0,45) or wind_degree in range(225,270):
+            wind_text_ha, wind_text_y_pos = ("right", 3.1)
+        if wind_degree in range(45,90) or wind_degree in range(180,225):
+            wind_text_ha, wind_text_y_pos = ("left", 2.1)
+        if wind_degree in range(90,135) or wind_degree in range(315,361):
+            wind_text_ha, wind_text_y_pos = ("left", 3.1)
+        if wind_degree in range(135,180) or wind_degree in range(270,315):
+            wind_text_ha, wind_text_y_pos = ("right", 2.1)
+
+    wind_style_dict = {
+        "arrow_size": arrow_size, 
+        "arrow_color": arrow_color, 
+        "arrow_weight": arrow_weight,
+        "wind_text_ha": wind_text_ha,
+        "wind_text_y_pos": wind_text_y_pos,
+    }
+
+    return wind_style_dict

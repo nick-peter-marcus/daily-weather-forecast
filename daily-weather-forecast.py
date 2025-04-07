@@ -13,7 +13,7 @@ def main():
     from email.message import EmailMessage
     from email.utils import make_msgid
     from scipy.interpolate import make_interp_spline
-    from utils import draw_pie, rescale_data, uv_styling
+    from utils import draw_pie, rescale_data, uv_styling, wind_styling
 
     APP_DIRECTORY = os.path.abspath(os.path.dirname(__file__))
 
@@ -191,12 +191,8 @@ def main():
             # WIND
             wind_degree = wind_degree_data[index]
             wind_speed = wind_speed_data[index]
-            # Proportionally size arrows according to wind speed
-            arrow_size = min(30, max(wind_speed*1.5, 10))
-            # Mark degrees 155-245 and 335-65 as purple, as they fall in my way of commute
-            arrow_color = "purple" if wind_degree in range(155,245) or wind_degree > 335 or wind_degree < 65 else "black"
-            # Style bold if below 10 (for better readability) and >30 (for emphasis)
-            arrow_weight = "bold" if wind_speed < 10 or wind_speed > 30 else None
+            wind_styles = wind_styling(wind_degree, wind_speed)
+
             # Draw arrows
             ax1.text(
                 x=index, 
@@ -204,21 +200,28 @@ def main():
                 s="\u2192", 
                 ha="center", 
                 va="center", 
-                color=arrow_color, 
-                size=arrow_size, 
-                weight=arrow_weight, 
+                color=wind_styles["arrow_color"], 
+                size=wind_styles["arrow_size"], 
+                weight=wind_styles["arrow_weight"], 
                 rotation=(270-wind_degree)
             )
             # Annotate wind speed
-            ax1.text(index, 2.1, f"{wind_speed:.0f}", ha="right", va="bottom", size=8)
+            ax1.text(
+                x=index, 
+                y=wind_styles["wind_text_y_pos"], 
+                s=f"{wind_speed:.0f}", 
+                size=8, 
+                ha=wind_styles["wind_text_ha"], 
+                va="bottom"
+            )
             
             # UV-INDEX
             uvi = uv_data[index] 
             uvi_scaled = uv_data_scaled[index] 
             uv_styles = uv_styling(uvi, uvi_scaled)
-            
+            # Draw UV bars
             ax1.bar(index, uvi_scaled, color=uv_styles["plot_color"])
-            
+            # Annotate UV data
             data_label = round(uvi)
             if data_label > 0:
                 ax1.text(
