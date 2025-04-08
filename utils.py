@@ -82,17 +82,9 @@ def wind_styling(wind_degree: int, wind_speed: int) -> dict:
     arrow_weight = "bold" if wind_speed < 10 or wind_speed > 30 else None
 
     # Position annotation based on degree
-    if wind_speed < 10:
-        wind_text_ha, wind_text_y_pos = ("left", 2.1)
-    else:
-        if wind_degree in range(0,45) or wind_degree in range(225,270):
-            wind_text_ha, wind_text_y_pos = ("right", 3.1)
-        if wind_degree in range(45,90) or wind_degree in range(180,225):
-            wind_text_ha, wind_text_y_pos = ("left", 2.1)
-        if wind_degree in range(90,135) or wind_degree in range(315,361):
-            wind_text_ha, wind_text_y_pos = ("left", 3.1)
-        if wind_degree in range(135,180) or wind_degree in range(270,315):
-            wind_text_ha, wind_text_y_pos = ("right", 2.1)
+    wind_text_ha, wind_text_y_pos = ("left", 2.1)
+    if wind_degree in range(105,180) or wind_degree in range(265,360):
+        wind_text_ha, wind_text_y_pos = ("right", 2.1)
 
     wind_style_dict = {
         "arrow_size": arrow_size, 
